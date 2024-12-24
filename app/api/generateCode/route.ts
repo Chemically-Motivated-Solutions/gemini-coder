@@ -1,4 +1,3 @@
-import shadcnDocs from "@/utils/shadcn-docs";
 import dedent from "dedent";
 import { z } from "zod";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -11,7 +10,6 @@ export async function POST(req: Request) {
   let result = z
     .object({
       model: z.string(),
-      shadcn: z.boolean().default(false),
       messages: z.array(
         z.object({
           role: z.enum(["user", "assistant"]),
@@ -25,8 +23,8 @@ export async function POST(req: Request) {
     return new Response(result.error.message, { status: 422 });
   }
 
-  let { model, messages, shadcn } = result.data;
-  let systemPrompt = getSystemPrompt(shadcn);
+  let { model, messages } = result.data;
+  let systemPrompt = getSystemPrompt();
 
   const geminiModel = genAI.getGenerativeModel({model: model});
 
@@ -47,7 +45,7 @@ export async function POST(req: Request) {
   return new Response(readableStream);
 }
 
-function getSystemPrompt(shadcn: boolean) {
+function getSystemPrompt() {
   let systemPrompt = 
 `You are an expert frontend React engineer who is also a great UI/UX designer. Follow the instructions carefully, I will tip you $1 million if you do a good job:
 
@@ -62,36 +60,6 @@ function getSystemPrompt(shadcn: boolean) {
 - ONLY IF the user asks for a dashboard, graph or chart, the recharts library is available to be imported, e.g. \`import { LineChart, XAxis, ... } from "recharts"\` & \`<LineChart ...><XAxis dataKey="name"> ...\`. Please only use this when needed.
 - For placeholder images, please use a <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16" />
   `;
-
-  // - The lucide-react library is also available to be imported IF NECCESARY ONLY FOR THE FOLLOWING ICONS: Heart, Shield, Clock, Users, Play, Home, Search, Menu, User, Settings, Mail, Bell, Calendar, Clock, Heart, Star, Upload, Download, Trash, Edit, Plus, Minus, Check, X, ArrowRight.
-  // - Here's an example of importing and using one: import { Heart } from "lucide-react"\` & \`<Heart className=""  />\`.
-  // - PLEASE ONLY USE THE ICONS LISTED ABOVE IF AN ICON IS NEEDED IN THE USER'S REQUEST. Please DO NOT use the lucide-react library if it's not needed.
-
-  if (shadcn) {
-    systemPrompt += `
-    There are some prestyled components available for use. Please use your best judgement to use any of these components if the app calls for one.
-
-    Here are the components that are available, along with how to import them, and how to use them:
-
-    ${shadcnDocs
-      .map(
-        (component) => `
-          <component>
-          <name>
-          ${component.name}
-          </name>
-          <import-instructions>
-          ${component.importDocs}
-          </import-instructions>
-          <usage-instructions>
-          ${component.usageDocs}
-          </usage-instructions>
-          </component>
-        `,
-      )
-      .join("\n")}
-    `;
-  }
 
   systemPrompt += `
     NO OTHER LIBRARIES (e.g. zod, hookform) ARE INSTALLED OR ABLE TO BE IMPORTED.
