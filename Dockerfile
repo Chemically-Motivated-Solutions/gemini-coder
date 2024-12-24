@@ -16,5 +16,11 @@ COPY . .
 # Expose the port your React app runs on
 EXPOSE 7860
 
+# Change ownership of /app to the node user
+RUN chown -R node:node /app
+
+# Switch to the node user
+USER node
+
 # Command to run the application
 CMD ["npm", "run", "dev"]
