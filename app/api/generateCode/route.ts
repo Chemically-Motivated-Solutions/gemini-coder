@@ -32,6 +32,8 @@ export async function POST(req: Request) {
     messages[0].content + systemPrompt + "\nPlease ONLY return code, NO backticks or language names. Don't start with \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`."
   );
 
+  console.log(messages[0].content + systemPrompt + "\nPlease ONLY return code, NO backticks or language names. Don't start with \`\`\`typescript or \`\`\`javascript or \`\`\`tsx or \`\`\`.")
+
   const readableStream = new ReadableStream({
     async start(controller) {
       for await (const chunk of geminiStream.stream) {
@@ -64,6 +66,7 @@ function getSystemPrompt() {
   systemPrompt += `
     NO OTHER LIBRARIES (e.g. zod, hookform) ARE INSTALLED OR ABLE TO BE IMPORTED.
   `;
+
   return dedent(systemPrompt);
 }
 
