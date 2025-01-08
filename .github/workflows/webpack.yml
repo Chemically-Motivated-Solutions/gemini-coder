@@ -1,0 +1,81 @@
+name: NodeJS with Webpack
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Cache node_modules to speed up builds
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-${{ matrix.node-version }}-
+    
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install dependencies
+      run: |
+        npm install
+    
+    # Linting code to ensure code quality (optional, but recommended)
+    - name: Run ESLint
+      run: |
+        npx eslint . --ext .js,.jsx,.ts,.tsx
+    
+    # Run tests before build (optional, but good practice)
+    - name: Run tests
+      run: |
+        npm test
+
+    - name: Build with Webpack
+      run: |
+        npx webpack --config webpack.config.js
+
+    # Optionally, upload the build artifact for further stages or inspection
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: webpack-build
+        path: dist/  # Adjust this path to your actual build output folder
+
+  deploy:
+    needs: build  # Ensures deployment runs after build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x  # Or any version you wish to deploy with
+
+    # Download the build artifact from the build job
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: webpack-build
+    
+    - name: Deploy
+      run: |
+        # Insert deployment steps here, such as moving files, deploying to a server, etc.
+        echo "Deploying build artifacts..."
